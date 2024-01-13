@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { Report, ReportType, data } from './data';
+import { ReportType, data } from './data';
 import { v4 as uuid } from 'uuid';
+import { ReportResponseDto } from './dtos/report.dto';
 
 interface ReportData {
     amount: number;
@@ -9,13 +10,18 @@ interface ReportData {
 
 @Injectable()
 export class AppService {
-    findAll(type: ReportType): Report[] {
+    findAll(type: ReportType): ReportResponseDto[] {
         const reportType =
             type === 'income' ? ReportType.INCOME : ReportType.EXPENSE;
-        return data.reports.filter((report) => report.type === reportType);
+        const reports = data.reports
+            .filter((report) => report.type === reportType)
+            .map((report) => new ReportResponseDto(report));
+        console.log(reports);
+
+        return reports;
     }
 
-    getById(type: ReportType, id: string) {
+    getById(type: ReportType, id: string): ReportResponseDto {
         const reportType =
             type === 'income' ? ReportType.INCOME : ReportType.EXPENSE;
 
@@ -23,10 +29,10 @@ export class AppService {
             .filter((report) => report.type === reportType)
             .find((report) => report.id === id);
 
-        return report;
+        return new ReportResponseDto(report);
     }
 
-    createEntity(type: ReportType, body: ReportData) {
+    createEntity(type: ReportType, body: ReportData): ReportResponseDto {
         const { source, amount } = body;
 
         const newReport = {
@@ -39,10 +45,14 @@ export class AppService {
         };
 
         data.reports.push(newReport);
-        return newReport;
+        return new ReportResponseDto(newReport);
     }
 
-    updateById(type: ReportType, id: string, body: Partial<ReportData>) {
+    updateById(
+        type: ReportType,
+        id: string,
+        body: Partial<ReportData>,
+    ): ReportResponseDto {
         const reportToUpdate = data.reports
             .filter((report) => report.type === type)
             .find((report) => report.id === id);
@@ -56,10 +66,10 @@ export class AppService {
             ...body,
         };
 
-        return data.reports[reportIndex];
+        return new ReportResponseDto(data.reports[reportIndex]);
     }
 
-    removeById(id: string) {
+    removeById(id: string): number {
         const entityIdx = data.reports.findIndex((report) => report.id === id);
 
         data.reports.splice(entityIdx, 1);
